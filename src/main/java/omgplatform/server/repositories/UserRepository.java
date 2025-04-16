@@ -12,5 +12,12 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface UserRepository extends JpaRepository<User,Long> {
+
+    /**
+     * Check if an account with some username exists
+     *
+     * @param username the username that is to be checked
+     * @return whether or not an account with the username exists
+     */
     boolean existsByUsername(String username);
 }

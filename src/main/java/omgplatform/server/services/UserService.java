@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 /**
- * Contains general logic for user accounts.
+ * Contains business logic for user accounts.
  *
  * @authors Clement Luo,
  * @date April 15, 2025
@@ -25,6 +25,9 @@ public class UserService {
     //Password hasher
     private final BCryptPasswordEncoder passwordEncoder;
 
+    //CONSTRUCTOR
+
+    @Autowired
     public UserService(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -33,35 +36,43 @@ public class UserService {
     //METHODS
 
     /**
+     * Get list of all users
      *
+     * @return A list of all the users
      */
     public List<User> getUsers() {
         return userRepository.findAll();
     }
 
-    // Check if the username is available
+    /**
+     * Check if a username is available
+     *
+     * @param username the username to check
+     * @return If the username is available
+     */
     public boolean isUsernameAvailable(String username) {
         return !userRepository.existsByUsername(username);
     }
 
-    // Register a new user
-    public boolean registerUser(String username, String password) {
-        if (isUsernameAvailable(username)) {
-            User newUser = new User();
-            newUser.setUsername(username);
-            newUser.setPassword(password);// Encrypt password
-            userRepository.save(newUser);
-            return true; // Registration successful
-        }
-        return false; // Username already taken
-    }
-
-    // Remove a user (optional, for cleanup)
+    /**
+     * Remove a user
+     *
+     * @param id the id of the user
+     */
     public void removeUser(Long id) {
         userRepository.deleteById(id);
     }
 
+    /**
+     * Register a user
+     *
+     * @param user the user entity to be registered
+     * @return the user object
+     */
     public User register(User user) {
+        //Hash password
+        //String pass = passwordEncoder.encode(user.getPassword());
+        //user.setPassword(pass);
         return userRepository.save(user);
     }
 }

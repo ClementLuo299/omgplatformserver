@@ -11,19 +11,33 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * WebSocket server logic.
+ *
+ * @authors Clement Luo,
+ * @date April 15, 2025
+ */
 @Component
 public class WebSocketHandler extends TextWebSocketHandler {
 
+    //List of user sessions
     private final Map<WebSocketSession, User> userSessions = new ConcurrentHashMap<>();
 
+    /**
+     * Run after connection is established
+     */
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws IOException {
-        // Do nothing until user sends their username
+        //Send message
         session.sendMessage(new TextMessage("Welcome! Send your username to join."));
     }
 
+    /**
+     * Handle text messages
+     */
     @Override
     public void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
+        //Get content of message
         String payload = message.getPayload();
 
         System.out.println("Received: " + payload);
@@ -37,6 +51,9 @@ public class WebSocketHandler extends TextWebSocketHandler {
         }
     }
 
+    /**
+     * Run after connection is closed
+     */
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         User user = userSessions.remove(session);
@@ -45,6 +62,9 @@ public class WebSocketHandler extends TextWebSocketHandler {
         }
     }
 
+    /**
+     * Send a message in all sessions
+     */
     private void broadcast(String message) {
         for (WebSocketSession s : userSessions.keySet()) {
             if (s.isOpen()) {
