@@ -1,8 +1,11 @@
 package omgplatform.server.entities;
 
 import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 /**
  * Represents a user account entity.
@@ -12,6 +15,9 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "users")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class User {
 
     //COLUMNS
@@ -23,62 +29,20 @@ public class User {
     private Long id;
 
     //Username
-    @Column(name = "username")
+    @Column(name = "username", unique = true, nullable = false)
     private String username;
 
     //Password
-    @Column(name = "password")
+    @Column(name = "password", nullable = false)
     private String password;
 
     //Account created at
-    @Column(name = "created_at")
-    private LocalDateTime created_at;
+    @CreationTimestamp
+    @Column(name = "created_at",updatable = false)
+    private OffsetDateTime created_at;
 
     //Account last updated at
+    @UpdateTimestamp
     @Column(name = "updated_at")
-    private LocalDateTime updated_at;
-
-    public User() {}
-
-    //SETTERS AND GETTERS
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public LocalDateTime getCreated_at() {
-        return created_at;
-    }
-
-    public void setCreated_at(LocalDateTime created_at) {
-        this.created_at = created_at;
-    }
-
-    public LocalDateTime getUpdated_at() {
-        return updated_at;
-    }
-
-    public void setUpdated_at(LocalDateTime updated_at) {
-        this.updated_at = updated_at;
-    }
+    private OffsetDateTime updated_at;
 }

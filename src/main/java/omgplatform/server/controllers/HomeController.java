@@ -3,10 +3,8 @@ package omgplatform.server.controllers;
 import omgplatform.server.entities.User;
 import omgplatform.server.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -36,8 +34,10 @@ public class HomeController {
         return userService.getUsers();
     }
 
+    // Endpoint for user registration
     @PostMapping("adduser")
-    public User addUser(@RequestBody User user){
-        return userService.addUser(user);
+    public ResponseEntity<User> register(@RequestBody User user) {
+        User savedUser = userService.register(user);
+        return ResponseEntity.ok(savedUser);
     }
 }
