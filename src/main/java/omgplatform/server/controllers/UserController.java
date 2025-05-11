@@ -1,5 +1,8 @@
 package omgplatform.server.controllers;
 
+import jakarta.validation.Valid;
+import omgplatform.server.dto.RegisterRequest;
+import omgplatform.server.dto.RegisterResponse;
 import omgplatform.server.entities.User;
 import omgplatform.server.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,12 +15,14 @@ import java.util.Map;
 
 /**
  * Contains HTTP routes and associated logic.
+ * URL: /users
  *
  * @authors Clement Luo,
  * @date April 15, 2025
  */
 @RestController
-public class HomeController {
+@RequestMapping("users")
+public class UserController {
 
     //SERVICES
 
@@ -42,19 +47,14 @@ public class HomeController {
      * Add a user
      * URL: /adduser
      *
-     * @param user a json object containing the necessary information
+     * @param request a json object containing the necessary information
      * @return returns a request code
      */
     @PostMapping("adduser")
-    public ResponseEntity<?> register(@RequestBody User user) {
-        try {
-            User registeredUser = userService.register(user);
-            return new ResponseEntity<>(registeredUser, HttpStatus.CREATED); // More appropriate status for creation
-        } catch (IllegalArgumentException ex) {
-            return new ResponseEntity<>(Map.of("error", ex.getMessage()), HttpStatus.BAD_REQUEST);
-        } catch (Exception ex) {
-            return new ResponseEntity<>(Map.of("error", "Internal server error"), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
+        User user = userService.register(request);
+        RegisterResponse response = new RegisterResponse(user.getUsername());
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     /**

@@ -1,5 +1,6 @@
 package omgplatform.server.services;
 
+import omgplatform.server.dto.RegisterRequest;
 import omgplatform.server.entities.User;
 import omgplatform.server.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -96,6 +97,44 @@ public class UserService {
 
         //Hash password and save user
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+        return userRepository.save(user);
+    }
+
+    /**
+     * Register a user
+     *
+     * @param request the response entity to be registered
+     * @return the user object
+     */
+    public User register(RegisterRequest request) {
+
+        //Check to see if username or password is empty
+        if(request.getUsername() == null || request.getUsername().trim().isEmpty()) {
+            throw new IllegalArgumentException("Username Cannot Be Empty");
+        }
+
+        if(request.getPassword() == null || request.getPassword().trim().isEmpty()){
+            throw new IllegalArgumentException("Password Cannot Be Empty");
+        }
+
+        //Check if username is taken
+        if(userRepository.findByUsername(request.getUsername()).isPresent()) {
+            throw new IllegalArgumentException("Username Is Already Taken");
+        }
+
+        //Check username and password conditions
+        if(!checkUsername()){
+            throw new IllegalArgumentException("Username Is Invalid");
+        }
+
+        if(!checkPassword()){
+            throw new IllegalArgumentException("Password Is Invalid");
+        }
+
+        //Hash password and save user
+        User user = new User();
+        user.setUsername(request.getUsername());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
         return userRepository.save(user);
     }
 
