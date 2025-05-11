@@ -1,5 +1,6 @@
 package omgplatform.server.services;
 
+import omgplatform.server.dto.LoginRequest;
 import omgplatform.server.dto.RegisterRequest;
 import omgplatform.server.entities.User;
 import omgplatform.server.repositories.UserRepository;
@@ -67,42 +68,6 @@ public class UserService {
     /**
      * Register a user
      *
-     * @param user the user entity to be registered
-     * @return the user object
-     */
-    public User register(User user) {
-
-        //Check to see if username or password is empty
-        if(user.getUsername() == null || user.getUsername().trim().isEmpty()) {
-            throw new IllegalArgumentException("Username Cannot Be Empty");
-        }
-
-        if(user.getPassword() == null || user.getPassword().trim().isEmpty()){
-            throw new IllegalArgumentException("Password Cannot Be Empty");
-        }
-
-        //Check if username is taken
-        if(userRepository.findByUsername(user.getUsername()).isPresent()) {
-            throw new IllegalArgumentException("Username Is Already Taken");
-        }
-
-        //Check username and password conditions
-        if(!checkUsername()){
-            throw new IllegalArgumentException("Username Is Invalid");
-        }
-
-        if(!checkPassword()){
-            throw new IllegalArgumentException("Password Is Invalid");
-        }
-
-        //Hash password and save user
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userRepository.save(user);
-    }
-
-    /**
-     * Register a user
-     *
      * @param request the response entity to be registered
      * @return the user object
      */
@@ -141,9 +106,22 @@ public class UserService {
     /**
      *
      */
-    public User login(User user) {
-        //
-        return null;
+    public User login(LoginRequest request) throws Exception {
+        //Check to see if username or password is empty
+        if(request.getUsername() == null || request.getUsername().trim().isEmpty()) {
+            throw new IllegalArgumentException("Username Cannot Be Empty");
+        }
+
+        if(request.getPassword() == null || request.getPassword().trim().isEmpty()){
+            throw new IllegalArgumentException("Password Cannot Be Empty");
+        }
+
+        User user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new Exception("User Not Found"));
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new Exception("Invalid credentials");
+        }
+        return user;
     }
 
     /**

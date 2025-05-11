@@ -1,10 +1,13 @@
 package omgplatform.server.controllers;
 
 import jakarta.validation.Valid;
+import omgplatform.server.dto.LoginRequest;
+import omgplatform.server.dto.LoginResponse;
 import omgplatform.server.dto.RegisterRequest;
 import omgplatform.server.dto.RegisterResponse;
 import omgplatform.server.entities.User;
 import omgplatform.server.services.UserService;
+import omgplatform.server.utils.JWTUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -50,7 +53,7 @@ public class UserController {
      * @param request a json object containing the necessary information
      * @return returns a request code
      */
-    @PostMapping("adduser")
+    @PostMapping("register")
     public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
         User user = userService.register(request);
         RegisterResponse response = new RegisterResponse(user.getUsername());
@@ -61,12 +64,17 @@ public class UserController {
      * Account login
      * URL: /login
      *
-     * @param user a json object containing the nece
+     * @param request a json object containing the necessary information
      * @return returns a request code
      */
     @PostMapping("login")
-    public ResponseEntity<User> login(@RequestBody User user) {
-        User savedUser = userService.login(user);
-        return ResponseEntity.ok(savedUser);
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request){
+        try {
+            User user = userService.login(request);
+            return ResponseEntity.ok("Login Successful");
+        }
+        catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        }
     }
 }
