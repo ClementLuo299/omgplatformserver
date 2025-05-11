@@ -70,9 +70,54 @@ public class UserService {
      * @return the user object
      */
     public User register(User user) {
-        //Hash password
-        //String pass = passwordEncoder.encode(user.getPassword());
-        //user.setPassword(pass);
+
+        //Check to see if username or password is empty
+        if(user.getUsername() == null || user.getUsername().trim().isEmpty()) {
+            throw new IllegalArgumentException("Username Cannot Be Empty");
+        }
+
+        if(user.getPassword() == null || user.getPassword().trim().isEmpty()){
+            throw new IllegalArgumentException("Password Cannot Be Empty");
+        }
+
+        //Check if username is taken
+        if(userRepository.findByUsername(user.getUsername()).isPresent()) {
+            throw new IllegalArgumentException("Username Is Already Taken");
+        }
+
+        //Check username and password conditions
+        if(!checkUsername()){
+            throw new IllegalArgumentException("Username Is Invalid");
+        }
+
+        if(!checkPassword()){
+            throw new IllegalArgumentException("Password Is Invalid");
+        }
+
+        //Hash password and save user
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
         return userRepository.save(user);
+    }
+
+    /**
+     *
+     */
+    public User login(User user) {
+        //
+        return null;
+    }
+
+    /**
+     *
+     */
+    private boolean checkUsername() {
+        return true;
+    }
+
+    /**
+     *
+     */
+    private boolean checkPassword() {
+        return true;
     }
 }
