@@ -4,10 +4,12 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
- * Main class where program is run.
+ * Entry point for the OMG Platform Server Spring Boot application.
  *
  * @authors Clement Luo,
  * @date April 15, 2025
+ * @edited April 16, 2025
+ * @since 1.0
  */
 @SpringBootApplication
 public class ServerApplication {

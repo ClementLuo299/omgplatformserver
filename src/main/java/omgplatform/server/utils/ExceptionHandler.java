@@ -11,6 +11,8 @@ import java.util.*;
  *
  * @authors Clement Luo,
  * @date May 11, 2025
+ * @edited May 11, 2025
+ * @since 1.0
  */
 @RestControllerAdvice
 public class ExceptionHandler {
@@ -35,3 +37,4 @@ public class ExceptionHandler {
         return new ResponseEntity<>(Map.of("error", ex.getMessage()), HttpStatus.BAD_REQUEST);
     }
 }
+
