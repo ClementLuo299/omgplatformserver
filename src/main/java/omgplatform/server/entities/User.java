@@ -12,6 +12,8 @@ import java.time.OffsetDateTime;
  *
  * @authors Clement Luo,
  * @date April 15, 2025
+ * @edited June 27, 2025
+ * @since 1.0
  */
 @Entity
 @Table(name = "users")
@@ -35,6 +37,18 @@ public class User {
     //Password
     @Column(name = "password", nullable = false)
     private String password;
+
+    //Full name
+    @Column(name = "full_name")
+    private String fullName;
+
+    //Date of birth
+    @Column(name = "date_of_birth")
+    private java.time.LocalDate dateOfBirth;
+
+    //Last login
+    @Column(name = "last_login")
+    private OffsetDateTime lastLogin;
 
     //Account created at
     @CreationTimestamp
