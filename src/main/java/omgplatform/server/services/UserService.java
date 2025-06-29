@@ -100,6 +100,8 @@ public class UserService {
         User user = new User();
         user.setUsername(request.getUsername());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setFullName(request.getFullName());
+        user.setDateOfBirth(request.getDateOfBirth());
         return userRepository.save(user);
     }
 

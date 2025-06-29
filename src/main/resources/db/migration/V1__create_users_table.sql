@@ -1,5 +1,5 @@
 CREATE TABLE users (
-    id BIGINT PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     full_name VARCHAR,
     date_of_birth DATE,
     username VARCHAR NOT NULL UNIQUE,

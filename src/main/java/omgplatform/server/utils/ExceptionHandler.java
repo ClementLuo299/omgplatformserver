@@ -36,5 +36,13 @@ public class ExceptionHandler {
     public ResponseEntity<Map<String, String>> handleIllegalArgs(IllegalArgumentException ex) {
         return new ResponseEntity<>(Map.of("error", ex.getMessage()), HttpStatus.BAD_REQUEST);
     }
-}
 
+    /**
+     *
+     */
+    @org.springframework.web.bind.annotation.ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, String>> handleAllExceptions(Exception ex) {
+        ex.printStackTrace(); // Optional: log to console for debugging
+        return new ResponseEntity<>(Map.of("error", ex.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+}
