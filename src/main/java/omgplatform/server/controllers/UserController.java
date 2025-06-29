@@ -22,6 +22,8 @@ import java.util.Map;
  *
  * @authors Clement Luo,
  * @date April 15, 2025
+ * @edited June 29, 2025
+ * @since 1.0
  */
 @RestController
 @RequestMapping("users")
@@ -32,6 +34,9 @@ public class UserController {
     //User account service
     @Autowired
     UserService userService;
+
+    @Autowired
+    private JWTUtil jwtUtil;
 
     //ROUTES
 
@@ -71,7 +76,8 @@ public class UserController {
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request){
         try {
             User user = userService.login(request);
-            return ResponseEntity.ok("Login Successful");
+            String token = JWTUtil.generateToken(user.getUsername());
+            return ResponseEntity.ok(new LoginResponse(token));
         }
         catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());

@@ -123,6 +123,9 @@ public class UserService {
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new Exception("Invalid credentials");
         }
+        // Update last login timestamp
+        user.setLastLogin(java.time.OffsetDateTime.now());
+        userRepository.save(user);
         return user;
     }
 
