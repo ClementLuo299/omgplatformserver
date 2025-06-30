@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Configuration;
  * @since 1.0
  */
 @Configuration
-public class JwtConfig {
+public class JWTConfig {
     @Value("${jwt.expiry.minutes:1440}")
     private int expiryMinutes;
 

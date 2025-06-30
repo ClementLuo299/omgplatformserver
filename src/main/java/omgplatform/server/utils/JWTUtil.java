@@ -3,7 +3,7 @@ package omgplatform.server.utils;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import omgplatform.server.config.JwtConfig;
+import omgplatform.server.config.JWTConfig;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -20,9 +20,9 @@ import java.util.Date;
  */
 @Component
 public class JWTUtil {
-    private final JwtConfig jwtConfig;
+    private final JWTConfig jwtConfig;
 
-    public JWTUtil(JwtConfig jwtConfig) {
+    public JWTUtil(JWTConfig jwtConfig) {
         this.jwtConfig = jwtConfig;
     }
 
