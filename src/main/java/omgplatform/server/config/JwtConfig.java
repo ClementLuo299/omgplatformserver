@@ -1,7 +1,10 @@
 package omgplatform.server.config;
 
+import omgplatform.server.utils.LoggingUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.Map;
 
 /**
  * Configuration class for JWT settings.
@@ -23,15 +26,33 @@ public class JWTConfig {
     @Value("${jwt.signature.algorithm:HS256}")
     private String signatureAlgorithm;
 
+    public JWTConfig() {
+        LoggingUtil.info("Initializing JWT configuration");
+    }
+
     public int getExpiryMinutes() {
+        LoggingUtil.debug("JWT expiry minutes requested: " + expiryMinutes);
         return expiryMinutes;
     }
 
     public String getSecret() {
+        LoggingUtil.debug("JWT secret requested (length: " + (secret != null ? secret.length() : 0) + ")");
         return secret;
     }
 
     public String getSignatureAlgorithm() {
+        LoggingUtil.debug("JWT signature algorithm requested: " + signatureAlgorithm);
         return signatureAlgorithm;
+    }
+
+    /**
+     * Log JWT configuration details (without exposing sensitive data)
+     */
+    public void logConfiguration() {
+        LoggingUtil.info("JWT Configuration loaded", Map.of(
+            "expiryMinutes", expiryMinutes,
+            "signatureAlgorithm", signatureAlgorithm,
+            "secretLength", secret != null ? secret.length() : 0
+        ));
     }
 }

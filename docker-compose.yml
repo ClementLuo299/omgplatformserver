@@ -21,9 +21,10 @@ services:
       SPRING_DATASOURCE_USERNAME: myuser
       SPRING_DATASOURCE_PASSWORD: mypassword
     ports:
-      - "8080:8080"
+      - "8443:8443"
     volumes:
       - .:/app
+    entrypoint: ["./wait-for-it.sh", "db:5432", "--", "./mvnw", "spring-boot:run"]
 
   pgadmin:
     image: dpage/pgadmin4
