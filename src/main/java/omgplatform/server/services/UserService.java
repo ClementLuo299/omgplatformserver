@@ -15,6 +15,8 @@ import java.util.List;
  *
  * @authors Clement Luo,
  * @date April 15, 2025
+ * @edited June 29, 2025
+ * @since 1.0
  */
 @Service
 public class UserService {

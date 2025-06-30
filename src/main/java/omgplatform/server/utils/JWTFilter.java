@@ -19,6 +19,8 @@ import java.util.List;
  *
  * @authors Clement Luo,
  * @date May 11, 2025
+ * @edited June 29, 2025
+ * @since 1.0
  */
 @Component
 public class JWTFilter extends OncePerRequestFilter {

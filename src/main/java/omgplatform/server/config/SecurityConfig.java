@@ -16,6 +16,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  *
  * @authors Clement Luo,
  * @date April 15, 2025
+ * @edited May 11, 2025
+ * @since 1.0
  */
 @Configuration
 @EnableWebSecurity

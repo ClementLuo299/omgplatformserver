@@ -16,6 +16,8 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @authors Clement Luo,
  * @date April 15, 2025
+ * @edited April 16, 2025
+ * @since 1.0
  */
 @Component
 public class WebSocketHandler extends TextWebSocketHandler {

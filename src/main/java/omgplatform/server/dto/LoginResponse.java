@@ -8,6 +8,8 @@ import lombok.Getter;
  *
  * @authors Clement Luo,
  * @date May 11, 2025
+ * @edited May 11, 2025
+ * @since 1.0
  */
 @Getter
 @AllArgsConstructor
