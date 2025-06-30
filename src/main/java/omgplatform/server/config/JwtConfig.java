@@ -17,8 +17,21 @@ public class JwtConfig {
     @Value("${jwt.expiry.minutes:1440}")
     private int expiryMinutes;
 
+    @Value("${jwt.secret:yourSuperSecretKeyThatIsAtLeast256BitsLongForHS256Algorithm123!@#}")
+    private String secret;
+
+    @Value("${jwt.signature.algorithm:HS256}")
+    private String signatureAlgorithm;
+
     public int getExpiryMinutes() {
         return expiryMinutes;
     }
-}
 
+    public String getSecret() {
+        return secret;
+    }
+
+    public String getSignatureAlgorithm() {
+        return signatureAlgorithm;
+    }
+}

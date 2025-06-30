@@ -76,7 +76,7 @@ public class UserController {
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request){
         try {
             User user = userService.login(request);
-            String token = JWTUtil.generateToken(user.getUsername());
+            String token = jwtUtil.generateToken(user.getUsername());
             return ResponseEntity.ok(new LoginResponse(token));
         }
         catch (Exception e) {

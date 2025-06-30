@@ -26,6 +26,7 @@ public class JWTFilter extends OncePerRequestFilter {
     @Autowired
     private JWTUtil jwtutil;
 
+    @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain)
@@ -35,11 +36,12 @@ public class JWTFilter extends OncePerRequestFilter {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String jwt = authHeader.substring(7);
             try {
-                String username = jwtutil.validateTokenAndGetUsername(jwt);
+                jwtutil.validateToken(jwt); // Only validates, throws if invalid
+                String username = jwtutil.getUsernameFromToken(jwt); // Extract username
                 UsernamePasswordAuthenticationToken auth =
                         new UsernamePasswordAuthenticationToken(username, null, List.of());
                 SecurityContextHolder.getContext().setAuthentication(auth);
-            } catch (JwtException e) {
+            } catch (Exception e) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 return;
             }
