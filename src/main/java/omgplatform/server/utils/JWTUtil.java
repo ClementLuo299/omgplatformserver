@@ -3,9 +3,8 @@ package omgplatform.server.utils;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import omgplatform.server.config.JWTConfig;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -22,10 +21,17 @@ import java.util.Map;
  * @since 1.0
  */
 @Component
-@RequiredArgsConstructor
 @Slf4j
 public class JWTUtil {
-    private final JWTConfig jwtConfig;
+
+    @Value("${jwt.expiry.minutes:1440}")
+    private int expiryMinutes;
+
+    @Value("${jwt.secret:yourSuperSecretKeyThatIsAtLeast256BitsLongForHS256Algorithm123!@#}")
+    private String secret;
+
+    @Value("${jwt.signature.algorithm:HS256}")
+    private String signatureAlgorithm;
 
     /**
      *
@@ -34,23 +40,20 @@ public class JWTUtil {
         long startTime = System.currentTimeMillis();
         
         try {
-            int expiryMinutes = jwtConfig.getExpiryMinutes();
-            String secret = jwtConfig.getSecret();
-            String alg = jwtConfig.getSignatureAlgorithm();
-            SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.forName(alg);
+            SignatureAlgorithm alg = SignatureAlgorithm.forName(signatureAlgorithm);
             
             String token = Jwts.builder()
                     .setSubject(username)
                     .setIssuedAt(new Date())
                     .setExpiration(Date.from(Instant.now().plus(expiryMinutes, ChronoUnit.MINUTES)))
-                    .signWith(Keys.hmacShaKeyFor(secret.getBytes()), signatureAlgorithm)
+                    .signWith(Keys.hmacShaKeyFor(secret.getBytes()), alg)
                     .compact();
             
             long duration = System.currentTimeMillis() - startTime;
             log.info("JWT token generated successfully", Map.of(
                 "username", username,
                 "expiryMinutes", expiryMinutes,
-                "algorithm", alg,
+                "algorithm", signatureAlgorithm,
                 "tokenLength", token.length(),
                 "duration", duration
             ));
@@ -67,7 +70,6 @@ public class JWTUtil {
         long startTime = System.currentTimeMillis();
         
         try {
-            String secret = jwtConfig.getSecret();
             Jwts.parserBuilder()
                     .setSigningKey(secret.getBytes())
                     .build()
@@ -90,7 +92,6 @@ public class JWTUtil {
         long startTime = System.currentTimeMillis();
         
         try {
-            String secret = jwtConfig.getSecret();
             String username = Jwts.parserBuilder()
                     .setSigningKey(secret.getBytes())
                     .build()
@@ -117,7 +118,6 @@ public class JWTUtil {
         long startTime = System.currentTimeMillis();
         
         try {
-            String secret = jwtConfig.getSecret();
             Date expiration = Jwts.parserBuilder()
                     .setSigningKey(secret.getBytes())
                     .build()
