@@ -1,6 +1,6 @@
 package omgplatform.server;
 
-import omgplatform.server.utils.LoggingUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -14,25 +14,26 @@ import org.springframework.context.ConfigurableApplicationContext;
  * @since 1.0
  */
 @SpringBootApplication
+@Slf4j
 public class ServerApplication {
 	public static void main(String[] args) {
-		LoggingUtil.info("Starting OMG Platform Server application");
-		LoggingUtil.info("Application arguments: " + String.join(" ", args));
+		log.info("Starting OMG Platform Server application");
+		log.info("Application arguments: {}", String.join(" ", args));
 		
 		try {
 			ConfigurableApplicationContext context = SpringApplication.run(ServerApplication.class, args);
-			LoggingUtil.info("OMG Platform Server application started successfully");
-			LoggingUtil.info("Application context initialized with " + context.getBeanDefinitionNames().length + " beans");
+			log.info("OMG Platform Server application started successfully");
+			log.info("Application context initialized with {} beans", context.getBeanDefinitionNames().length);
 			
 			// Add shutdown hook for graceful logging
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-				LoggingUtil.info("Shutting down OMG Platform Server application");
+				log.info("Shutting down OMG Platform Server application");
 				context.close();
-				LoggingUtil.info("OMG Platform Server application shutdown complete");
+				log.info("OMG Platform Server application shutdown complete");
 			}));
 			
 		} catch (Exception e) {
-			LoggingUtil.error("Failed to start OMG Platform Server application", e);
+			log.error("Failed to start OMG Platform Server application", e);
 			System.exit(1);
 		}
 	}

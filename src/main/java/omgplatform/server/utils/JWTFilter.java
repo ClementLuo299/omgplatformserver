@@ -5,8 +5,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import omgplatform.server.utils.LoggingUtil;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -25,14 +25,11 @@ import java.util.Map;
  * @since 1.0
  */
 @Component
+@RequiredArgsConstructor
+@Slf4j
 public class JWTFilter extends OncePerRequestFilter {
 
-    @Autowired
-    private JWTUtil jwtutil;
-
-    public JWTFilter() {
-        LoggingUtil.info("JWT Filter initialized");
-    }
+    private final JWTUtil jwtutil;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -44,7 +41,7 @@ public class JWTFilter extends OncePerRequestFilter {
         String method = request.getMethod();
         String authHeader = request.getHeader("Authorization");
         
-        LoggingUtil.debug("JWT Filter processing request", Map.of(
+        log.debug("JWT Filter processing request", Map.of(
             "method", method,
             "uri", requestURI,
             "hasAuthHeader", authHeader != null,
@@ -53,7 +50,7 @@ public class JWTFilter extends OncePerRequestFilter {
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String jwt = authHeader.substring(7);
-            LoggingUtil.debug("JWT token found in request", Map.of(
+            log.debug("JWT token found in request", Map.of(
                 "tokenLength", jwt.length(),
                 "method", method,
                 "uri", requestURI
@@ -67,14 +64,14 @@ public class JWTFilter extends OncePerRequestFilter {
                         new UsernamePasswordAuthenticationToken(username, null, List.of());
                 SecurityContextHolder.getContext().setAuthentication(auth);
                 
-                LoggingUtil.info("JWT authentication successful", Map.of(
+                log.info("JWT authentication successful", Map.of(
                     "username", username,
                     "method", method,
                     "uri", requestURI
                 ));
                 
             } catch (JwtException e) {
-                LoggingUtil.warn("JWT token validation failed", Map.of(
+                log.warn("JWT token validation failed", Map.of(
                     "method", method,
                     "uri", requestURI,
                     "error", e.getMessage()
@@ -82,18 +79,18 @@ public class JWTFilter extends OncePerRequestFilter {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 return;
             } catch (Exception e) {
-                LoggingUtil.error("Unexpected error during JWT authentication", e);
+                log.error("Unexpected error during JWT authentication", e);
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 return;
             }
         } else {
-            LoggingUtil.debug("No JWT token found in request", Map.of(
+            log.debug("No JWT token found in request", Map.of(
                 "method", method,
                 "uri", requestURI
             ));
         }
 
-        LoggingUtil.debug("JWT Filter completed, continuing filter chain", Map.of(
+        log.debug("JWT Filter completed, continuing filter chain", Map.of(
             "method", method,
             "uri", requestURI
         ));

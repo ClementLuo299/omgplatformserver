@@ -1,8 +1,8 @@
 package omgplatform.server.config;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import omgplatform.server.controllers.WebSocketHandler;
-import omgplatform.server.utils.LoggingUtil;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
@@ -18,30 +18,26 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
  */
 @Configuration
 @EnableWebSocket
+@RequiredArgsConstructor
+@Slf4j
 public class WebSocketConfiguration implements WebSocketConfigurer {
 
     private final WebSocketHandler webSocketHandler;
-
-    @Autowired
-    public WebSocketConfiguration(WebSocketHandler webSocketHandler) {
-        this.webSocketHandler = webSocketHandler;
-        LoggingUtil.info("Initializing WebSocket configuration");
-    }
 
     /**
      * Register a web socket handler
      */
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        LoggingUtil.info("Registering WebSocket handlers");
+        log.info("Registering WebSocket handlers");
         
         try {
             //URL: /game
             registry.addHandler(webSocketHandler, "/game").setAllowedOrigins("*");
-            LoggingUtil.info("WebSocket handler registered successfully for endpoint: /game");
-            LoggingUtil.info("WebSocket configuration: All origins allowed for /game endpoint");
+            log.info("WebSocket handler registered successfully for endpoint: /game");
+            log.info("WebSocket configuration: All origins allowed for /game endpoint");
         } catch (Exception e) {
-            LoggingUtil.error("Failed to register WebSocket handlers", e);
+            log.error("Failed to register WebSocket handlers", e);
             throw e;
         }
     }

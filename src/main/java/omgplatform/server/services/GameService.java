@@ -1,8 +1,8 @@
 package omgplatform.server.services;
 
+import lombok.extern.slf4j.Slf4j;
 import omgplatform.server.dto.GameMessage;
 import omgplatform.server.entities.User;
-import omgplatform.server.utils.LoggingUtil;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
  * @since 1.0
  */
 @Service
+@Slf4j
 public class GameService {
     
     // Active players in the game
@@ -31,7 +32,7 @@ public class GameService {
     private static final String DEFAULT_ROOM = "main";
     
     public GameService() {
-        LoggingUtil.info("GameService initialized");
+        log.info("GameService initialized");
         initializeDefaultRoom();
     }
     
@@ -47,7 +48,7 @@ public class GameService {
             "OPEN"
         );
         gameRooms.put(DEFAULT_ROOM, defaultRoom);
-        LoggingUtil.info("Default game room initialized: " + DEFAULT_ROOM);
+        log.info("Default game room initialized: {}", DEFAULT_ROOM);
     }
     
     /**
@@ -65,10 +66,8 @@ public class GameService {
         activePlayers.put(user.getUsername(), playerInfo);
         updateRoomPlayerCount(DEFAULT_ROOM, 1);
         
-        LoggingUtil.info("Player added to game", Map.of(
-            "username", user.getUsername(),
-            "totalPlayers", activePlayers.size()
-        ));
+        log.info("Player added to game - username: {}, totalPlayers: {}", 
+                user.getUsername(), activePlayers.size());
         
         return playerInfo;
     }
@@ -80,10 +79,8 @@ public class GameService {
         GameMessage.PlayerInfo player = activePlayers.remove(username);
         if (player != null) {
             updateRoomPlayerCount(DEFAULT_ROOM, -1);
-            LoggingUtil.info("Player removed from game", Map.of(
-                "username", username,
-                "totalPlayers", activePlayers.size()
-            ));
+            log.info("Player removed from game - username: {}, totalPlayers: {}", 
+                    username, activePlayers.size());
         }
         return player;
     }
@@ -98,12 +95,8 @@ public class GameService {
             player.setY(y);
             player.setLastSeen(System.currentTimeMillis());
             
-            LoggingUtil.debug("Player position updated", Map.of(
-                "username", username,
-                "x", x,
-                "y", y,
-                "direction", direction
-            ));
+            log.debug("Player position updated - username: {}, x: {}, y: {}, direction: {}", 
+                    username, x, y, direction);
             return true;
         }
         return false;
@@ -169,12 +162,8 @@ public class GameService {
                 room.setStatus("OPEN");
             }
             
-            LoggingUtil.debug("Room player count updated", Map.of(
-                "roomId", roomId,
-                "currentPlayers", room.getCurrentPlayers(),
-                "maxPlayers", room.getMaxPlayers(),
-                "status", room.getStatus()
-            ));
+            log.debug("Room player count updated - roomId: {}, currentPlayers: {}, maxPlayers: {}, status: {}", 
+                    roomId, room.getCurrentPlayers(), room.getMaxPlayers(), room.getStatus());
         }
     }
     
@@ -205,11 +194,7 @@ public class GameService {
         );
         
         gameRooms.put(roomId, room);
-        LoggingUtil.info("New game room created", Map.of(
-            "roomId", roomId,
-            "name", name,
-            "maxPlayers", maxPlayers
-        ));
+        log.info("New game room created - roomId: {}, name: {}, maxPlayers: {}", roomId, name, maxPlayers);
         
         return room;
     }
@@ -226,14 +211,11 @@ public class GameService {
         
         for (String username : inactivePlayers) {
             removePlayer(username);
-            LoggingUtil.info("Removed inactive player: " + username);
+            log.info("Removed inactive player: {}", username);
         }
         
         if (!inactivePlayers.isEmpty()) {
-            LoggingUtil.info("Cleanup completed", Map.of(
-                "removedPlayers", inactivePlayers.size(),
-                "remainingPlayers", activePlayers.size()
-            ));
+            log.info("Cleanup completed - removedPlayers: {}, remainingPlayers: {}", inactivePlayers.size(), activePlayers.size());
         }
     }
 } 

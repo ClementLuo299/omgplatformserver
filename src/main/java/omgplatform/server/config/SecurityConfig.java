@@ -1,8 +1,8 @@
 package omgplatform.server.config;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import omgplatform.server.utils.JWTFilter;
-import omgplatform.server.utils.LoggingUtil;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -27,10 +27,11 @@ import java.util.List;
  */
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
+@Slf4j
 public class SecurityConfig {
 
-    @Autowired
-    private JWTFilter jwtFilter;
+    private final JWTFilter jwtFilter;
 
     /**
      * Set password encoder
@@ -39,9 +40,9 @@ public class SecurityConfig {
      */
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
-        LoggingUtil.info("Initializing BCrypt password encoder");
+        log.info("Initializing BCrypt password encoder");
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-        LoggingUtil.info("BCrypt password encoder initialized successfully");
+        log.info("BCrypt password encoder initialized successfully");
         return encoder;
     }
 
@@ -50,7 +51,7 @@ public class SecurityConfig {
      */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        LoggingUtil.info("Configuring security filter chain (production mode)");
+        log.info("Configuring security filter chain (production mode)");
         try {
             http
                 .csrf(AbstractHttpConfigurer::disable)
@@ -65,10 +66,10 @@ public class SecurityConfig {
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
-            LoggingUtil.info("Security filter chain configured successfully (production mode)");
+            log.info("Security filter chain configured successfully (production mode)");
             return http.build();
         } catch (Exception e) {
-            LoggingUtil.error("Failed to configure security filter chain", e);
+            log.error("Failed to configure security filter chain", e);
             throw e;
         }
     }

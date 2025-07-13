@@ -1,14 +1,14 @@
 package omgplatform.server.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import omgplatform.server.dto.GameMessage;
 import omgplatform.server.dto.WebSocketMessage;
 import omgplatform.server.entities.User;
 import omgplatform.server.services.GameService;
 import omgplatform.server.services.UserService;
 import omgplatform.server.utils.JWTUtil;
-import omgplatform.server.utils.LoggingUtil;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -28,6 +28,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 1.0
  */
 @Component
+@RequiredArgsConstructor
+@Slf4j
 public class WebSocketHandler extends TextWebSocketHandler {
 
     // List of authenticated user sessions
@@ -40,14 +42,6 @@ public class WebSocketHandler extends TextWebSocketHandler {
     private final GameService gameService;
     private final UserService userService;
     private final JWTUtil jwtUtil;
-    
-    @Autowired
-    public WebSocketHandler(GameService gameService, UserService userService, JWTUtil jwtUtil) {
-        this.gameService = gameService;
-        this.userService = userService;
-        this.jwtUtil = jwtUtil;
-        LoggingUtil.info("WebSocket handler initialized with dependencies");
-    }
 
     /**
      * Run after connection is established
@@ -55,8 +49,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws IOException {
         String sessionId = session.getId();
-        LoggingUtil.websocketEvent("CONNECT", sessionId, "New WebSocket connection established");
-        LoggingUtil.info("WebSocket connection established", Map.of(
+        log.info("WebSocket connection established", Map.of(
             "sessionId", sessionId,
             "remoteAddress", session.getRemoteAddress() != null ? session.getRemoteAddress().toString() : "unknown",
             "activeConnections", authenticatedSessions.size() + 1
@@ -75,8 +68,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
         String sessionId = session.getId();
         String payload = message.getPayload();
         
-        LoggingUtil.websocketEvent("MESSAGE", sessionId, "Received message: " + payload);
-        LoggingUtil.debug("Processing WebSocket message", Map.of(
+        log.debug("Processing WebSocket message", Map.of(
             "sessionId", sessionId,
             "messageLength", payload.length(),
             "messageContent", payload
@@ -108,7 +100,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
             }
             
         } catch (Exception e) {
-            LoggingUtil.error("Error processing WebSocket message", e);
+            log.error("Error processing WebSocket message", e);
             sendError(session, "Invalid message format: " + e.getMessage());
         }
     }
@@ -168,13 +160,13 @@ public class WebSocketHandler extends TextWebSocketHandler {
             WebSocketMessage gameStateMsg = WebSocketMessage.of("GAME_STATE", gameService.getGameState());
             sendMessage(session, gameStateMsg);
             
-            LoggingUtil.info("Player joined game successfully", Map.of(
+            log.info("Player joined game successfully", Map.of(
                 "username", user.getUsername(),
                 "sessionId", session.getId()
             ));
             
         } catch (Exception e) {
-            LoggingUtil.error("Error handling join game", e);
+            log.error("Error handling join game", e);
             sendError(session, "Failed to join game: " + e.getMessage());
         }
     }
@@ -207,13 +199,13 @@ public class WebSocketHandler extends TextWebSocketHandler {
             // Broadcast to all authenticated users
             broadcastToAuthenticated(chatMsg);
             
-            LoggingUtil.debug("Chat message broadcasted", Map.of(
+            log.debug("Chat message broadcasted", Map.of(
                 "username", user.getUsername(),
                 "message", chatData.getMessage()
             ));
             
         } catch (Exception e) {
-            LoggingUtil.error("Error handling chat message", e);
+            log.error("Error handling chat message", e);
             sendError(session, "Failed to send chat message");
         }
     }
@@ -249,7 +241,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
                 ));
                 broadcastToAuthenticated(moveMsg);
                 
-                LoggingUtil.debug("Player movement broadcasted", Map.of(
+                log.debug("Player movement broadcasted", Map.of(
                     "username", user.getUsername(),
                     "x", moveData.getX(),
                     "y", moveData.getY(),
@@ -260,7 +252,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
             }
             
         } catch (Exception e) {
-            LoggingUtil.error("Error handling player move", e);
+            log.error("Error handling player move", e);
             sendError(session, "Failed to process movement");
         }
     }
@@ -279,7 +271,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
             WebSocketMessage stateMsg = WebSocketMessage.of("GAME_STATE", gameService.getGameState());
             sendMessage(session, stateMsg);
         } catch (Exception e) {
-            LoggingUtil.error("Error getting game state", e);
+            log.error("Error getting game state", e);
             sendError(session, "Failed to get game state");
         }
     }
@@ -298,7 +290,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
             WebSocketMessage playersMsg = WebSocketMessage.of("PLAYERS_LIST", gameService.getOnlinePlayers());
             sendMessage(session, playersMsg);
         } catch (Exception e) {
-            LoggingUtil.error("Error getting players list", e);
+            log.error("Error getting players list", e);
             sendError(session, "Failed to get players list");
         }
     }
@@ -311,8 +303,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
         String sessionId = session.getId();
         User user = authenticatedSessions.remove(session);
         
-        LoggingUtil.websocketEvent("DISCONNECT", sessionId, "Connection closed with status: " + status.getCode());
-        LoggingUtil.info("WebSocket connection closed", Map.of(
+        log.info("WebSocket connection closed", Map.of(
             "sessionId", sessionId,
             "closeStatus", status.getCode(),
             "closeReason", status.getReason(),
@@ -328,7 +319,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
             WebSocketMessage leaveMsg = WebSocketMessage.system(user.getUsername() + " left the game.");
             broadcastToAuthenticated(leaveMsg);
             
-            LoggingUtil.info("User disconnected: " + user.getUsername());
+            log.info("User disconnected: " + user.getUsername());
         }
     }
 
@@ -340,7 +331,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
             String jsonMessage = objectMapper.writeValueAsString(message);
             session.sendMessage(new TextMessage(jsonMessage));
         } catch (IOException e) {
-            LoggingUtil.error("Failed to send message to session: " + session.getId(), e);
+            log.error("Failed to send message to session: " + session.getId(), e);
         }
     }
 
@@ -356,7 +347,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
      * Broadcast message to all authenticated sessions
      */
     private void broadcastToAuthenticated(WebSocketMessage message) {
-        LoggingUtil.debug("Broadcasting message to authenticated sessions", Map.of(
+        log.debug("Broadcasting message to authenticated sessions", Map.of(
             "messageType", message.getType(),
             "targetSessions", authenticatedSessions.size()
         ));
@@ -370,13 +361,13 @@ public class WebSocketHandler extends TextWebSocketHandler {
                     sendMessage(session, message);
                     successCount++;
                 } catch (Exception e) {
-                    LoggingUtil.error("Failed to broadcast message to session: " + session.getId(), e);
+                    log.error("Failed to broadcast message to session: " + session.getId(), e);
                     failureCount++;
                 }
             }
         }
         
-        LoggingUtil.info("Broadcast completed", Map.of(
+        log.info("Broadcast completed", Map.of(
             "messageType", message.getType(),
             "successfulSends", successCount,
             "failedSends", failureCount,

@@ -1,11 +1,11 @@
 package omgplatform.server.services;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import omgplatform.server.dto.LoginRequest;
 import omgplatform.server.dto.RegisterRequest;
 import omgplatform.server.entities.User;
 import omgplatform.server.repositories.UserRepository;
-import omgplatform.server.utils.LoggingUtil;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -21,24 +21,13 @@ import java.util.Map;
  * @since 1.0
  */
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class UserService {
 
-    //ATTRIBUTES
-
-    //User repository
+    // Dependencies
     private final UserRepository userRepository;
-
-    //Password hasher
     private final BCryptPasswordEncoder passwordEncoder;
-
-    //CONSTRUCTOR
-
-    @Autowired
-    public UserService(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        LoggingUtil.info("UserService initialized with dependencies");
-    }
 
     //METHODS
 
@@ -48,21 +37,21 @@ public class UserService {
      * @return A list of all the users
      */
     public List<User> getUsers() {
-        LoggingUtil.methodEntry("getUsers");
+        log.debug("Method entry: getUsers");
         long startTime = System.currentTimeMillis();
         
         try {
             List<User> users = userRepository.findAll();
             long duration = System.currentTimeMillis() - startTime;
             
-            LoggingUtil.dbOperation("SELECT", "users", duration);
-            LoggingUtil.methodExit("getUsers", "Retrieved " + users.size() + " users");
+            log.debug("DB operation: SELECT users - {}ms", duration);
+            log.info("Method exit: getUsers - Retrieved {} users", users.size());
             
             return users;
         } catch (Exception e) {
             long duration = System.currentTimeMillis() - startTime;
-            LoggingUtil.error("Failed to retrieve users from database", e);
-            LoggingUtil.dbOperation("SELECT", "users", duration);
+            log.error("Failed to retrieve users from database", e);
+            log.debug("DB operation: SELECT users - {}ms", duration);
             throw e;
         }
     }
@@ -74,21 +63,21 @@ public class UserService {
      * @return If the username is available
      */
     public boolean isUsernameAvailable(String username) {
-        LoggingUtil.methodEntry("isUsernameAvailable", Map.of("username", username));
+        log.debug("Method entry: isUsernameAvailable - username: {}", username);
         long startTime = System.currentTimeMillis();
         
         try {
             boolean available = !userRepository.existsByUsername(username);
             long duration = System.currentTimeMillis() - startTime;
             
-            LoggingUtil.dbOperation("SELECT", "users", duration);
-            LoggingUtil.methodExit("isUsernameAvailable", available);
+            log.debug("DB operation: SELECT users - {}ms", duration);
+            log.debug("Method exit: isUsernameAvailable - available: {}", available);
             
             return available;
         } catch (Exception e) {
             long duration = System.currentTimeMillis() - startTime;
-            LoggingUtil.error("Failed to check username availability for: " + username, e);
-            LoggingUtil.dbOperation("SELECT", "users", duration);
+            log.error("Failed to check username availability for: {}", username, e);
+            log.debug("DB operation: SELECT users - {}ms", duration);
             throw e;
         }
     }
@@ -99,20 +88,20 @@ public class UserService {
      * @param id the id of the user
      */
     public void removeUser(Long id) {
-        LoggingUtil.methodEntry("removeUser", Map.of("userId", id));
+        log.debug("Method entry: removeUser - userId: {}", id);
         long startTime = System.currentTimeMillis();
         
         try {
             userRepository.deleteById(id);
             long duration = System.currentTimeMillis() - startTime;
             
-            LoggingUtil.dbOperation("DELETE", "users", duration);
-            LoggingUtil.methodExit("removeUser", "User with ID " + id + " removed");
+            log.debug("DB operation: DELETE users - {}ms", duration);
+            log.info("Method exit: removeUser - User with ID {} removed", id);
             
         } catch (Exception e) {
             long duration = System.currentTimeMillis() - startTime;
-            LoggingUtil.error("Failed to remove user with ID: " + id, e);
-            LoggingUtil.dbOperation("DELETE", "users", duration);
+            log.error("Failed to remove user with ID: {}", id, e);
+            log.debug("DB operation: DELETE users - {}ms", duration);
             throw e;
         }
     }
@@ -124,33 +113,33 @@ public class UserService {
      * @return the user object
      */
     public User register(RegisterRequest request) {
-        LoggingUtil.methodEntry("register", Map.of("username", request.getUsername()));
+        log.debug("Method entry: register - username: {}", request.getUsername());
 
         //Check to see if username or password is empty
         if(request.getUsername() == null || request.getUsername().trim().isEmpty()) {
-            LoggingUtil.warn("Registration attempt with empty username");
+            log.warn("Registration attempt with empty username");
             throw new IllegalArgumentException("Username Cannot Be Empty");
         }
 
         if(request.getPassword() == null || request.getPassword().trim().isEmpty()){
-            LoggingUtil.warn("Registration attempt with empty password for username: " + request.getUsername());
+            log.warn("Registration attempt with empty password for username: {}", request.getUsername());
             throw new IllegalArgumentException("Password Cannot Be Empty");
         }
 
         //Check if username is taken
         if(userRepository.findByUsername(request.getUsername()).isPresent()) {
-            LoggingUtil.warn("Registration attempt with taken username: " + request.getUsername());
+            log.warn("Registration attempt with taken username: {}", request.getUsername());
             throw new IllegalArgumentException("Username Is Already Taken");
         }
 
         //Check username and password conditions
         if(!checkUsername()){
-            LoggingUtil.warn("Registration attempt with invalid username: " + request.getUsername());
+            log.warn("Registration attempt with invalid username: {}", request.getUsername());
             throw new IllegalArgumentException("Username Is Invalid");
         }
 
         if(!checkPassword()){
-            LoggingUtil.warn("Registration attempt with invalid password for username: " + request.getUsername());
+            log.warn("Registration attempt with invalid password for username: {}", request.getUsername());
             throw new IllegalArgumentException("Password Is Invalid");
         }
 
@@ -166,14 +155,14 @@ public class UserService {
             User savedUser = userRepository.save(user);
             long duration = System.currentTimeMillis() - startTime;
             
-            LoggingUtil.dbOperation("INSERT", "users", duration);
-            LoggingUtil.methodExit("register", "User registered successfully: " + savedUser.getUsername());
+            log.debug("DB operation: INSERT users - {}ms", duration);
+            log.info("Method exit: register - User registered successfully: {}", savedUser.getUsername());
             
             return savedUser;
         } catch (Exception e) {
             long duration = System.currentTimeMillis() - startTime;
-            LoggingUtil.error("Failed to register user: " + request.getUsername(), e);
-            LoggingUtil.dbOperation("INSERT", "users", duration);
+            log.error("Failed to register user: {}", request.getUsername(), e);
+            log.debug("DB operation: INSERT users - {}ms", duration);
             throw e;
         }
     }
@@ -182,16 +171,16 @@ public class UserService {
      *
      */
     public User login(LoginRequest request) throws Exception {
-        LoggingUtil.methodEntry("login", Map.of("username", request.getUsername()));
+        log.debug("Method entry: login - username: {}", request.getUsername());
         
         //Check to see if username or password is empty
         if(request.getUsername() == null || request.getUsername().trim().isEmpty()) {
-            LoggingUtil.warn("Login attempt with empty username");
+            log.warn("Login attempt with empty username");
             throw new IllegalArgumentException("Username Cannot Be Empty");
         }
 
         if(request.getPassword() == null || request.getPassword().trim().isEmpty()){
-            LoggingUtil.warn("Login attempt with empty password for username: " + request.getUsername());
+            log.warn("Login attempt with empty password for username: {}", request.getUsername());
             throw new IllegalArgumentException("Password Cannot Be Empty");
         }
 
@@ -201,7 +190,7 @@ public class UserService {
                     .orElseThrow(() -> new Exception("User Not Found"));
             
             if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-                LoggingUtil.warn("Login attempt with invalid password for username: " + request.getUsername());
+                log.warn("Login attempt with invalid password for username: {}", request.getUsername());
                 throw new Exception("Invalid credentials");
             }
             
@@ -210,15 +199,15 @@ public class UserService {
             userRepository.save(user);
             
             long duration = System.currentTimeMillis() - startTime;
-            LoggingUtil.dbOperation("SELECT", "users", duration);
-            LoggingUtil.dbOperation("UPDATE", "users", System.currentTimeMillis() - startTime - duration);
+            log.debug("DB operation: SELECT users - {}ms", duration);
+            log.debug("DB operation: UPDATE users - {}ms", System.currentTimeMillis() - startTime - duration);
             
-            LoggingUtil.methodExit("login", "User logged in successfully: " + user.getUsername());
+            log.info("Method exit: login - User logged in successfully: {}", user.getUsername());
             return user;
         } catch (Exception e) {
             long duration = System.currentTimeMillis() - startTime;
-            LoggingUtil.error("Login failed for user: " + request.getUsername(), e);
-            LoggingUtil.dbOperation("SELECT", "users", duration);
+            log.error("Login failed for user: {}", request.getUsername(), e);
+            log.debug("DB operation: SELECT users - {}ms", duration);
             throw e;
         }
     }
@@ -227,7 +216,7 @@ public class UserService {
      *
      */
     private boolean checkUsername() {
-        LoggingUtil.debug("Checking username validation rules");
+        log.debug("Checking username validation rules");
         return true;
     }
 
@@ -235,7 +224,7 @@ public class UserService {
      *
      */
     private boolean checkPassword() {
-        LoggingUtil.debug("Checking password validation rules");
+        log.debug("Checking password validation rules");
         return true;
     }
 
@@ -246,21 +235,21 @@ public class UserService {
      * @return Optional containing the user if found
      */
     public java.util.Optional<User> findByUsername(String username) {
-        LoggingUtil.methodEntry("findByUsername", Map.of("username", username));
+        log.debug("Method entry: findByUsername - username: {}", username);
         long startTime = System.currentTimeMillis();
         
         try {
             java.util.Optional<User> user = userRepository.findByUsername(username);
             long duration = System.currentTimeMillis() - startTime;
             
-            LoggingUtil.dbOperation("SELECT", "users", duration);
-            LoggingUtil.methodExit("findByUsername", user.isPresent() ? "User found" : "User not found");
+            log.debug("DB operation: SELECT users - {}ms", duration);
+            log.debug("Method exit: findByUsername - {}", user.isPresent() ? "User found" : "User not found");
             
             return user;
         } catch (Exception e) {
             long duration = System.currentTimeMillis() - startTime;
-            LoggingUtil.error("Failed to find user by username: " + username, e);
-            LoggingUtil.dbOperation("SELECT", "users", duration);
+            log.error("Failed to find user by username: {}", username, e);
+            log.debug("DB operation: SELECT users - {}ms", duration);
             throw e;
         }
     }

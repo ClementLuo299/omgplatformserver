@@ -1,6 +1,7 @@
 package omgplatform.server.config;
 
-import omgplatform.server.utils.LoggingUtil;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
@@ -16,6 +17,7 @@ import java.util.Map;
  * @since 1.0
  */
 @Configuration
+@Slf4j
 public class JWTConfig {
     
     // Default values
@@ -29,34 +31,25 @@ public class JWTConfig {
     public static final String SIGNATURE_ALGORITHM_KEY = "jwt.signature.algorithm";
     
     @Value("${" + EXPIRY_MINUTES_KEY + ":" + DEFAULT_EXPIRY_MINUTES + "}")
+    @Getter
     private int expiryMinutes;
 
     @Value("${" + SECRET_KEY + ":" + DEFAULT_SECRET + "}")
+    @Getter
     private String secret;
 
     @Value("${" + SIGNATURE_ALGORITHM_KEY + ":" + DEFAULT_SIGNATURE_ALGORITHM + "}")
+    @Getter
     private String signatureAlgorithm;
 
     public JWTConfig() {
-        LoggingUtil.info("Initializing JWT configuration");
+        log.info("Initializing JWT configuration");
         
         // Log configuration details (without exposing sensitive data)
-        LoggingUtil.info("JWT Configuration loaded", Map.of(
+        log.info("JWT Configuration loaded", Map.of(
             "expiryMinutes", expiryMinutes,
             "signatureAlgorithm", signatureAlgorithm,
             "secretLength", secret != null ? secret.length() : 0
         ));
-    }
-
-    public int getExpiryMinutes() {
-        return expiryMinutes;
-    }
-
-    public String getSecret() {
-        return secret;
-    }
-
-    public String getSignatureAlgorithm() {
-        return signatureAlgorithm;
     }
 }
