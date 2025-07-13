@@ -24,7 +24,8 @@ services:
       - "8443:8443"
     volumes:
       - .:/app
-    entrypoint: ["./wait-for-it.sh", "db:5432", "--", "./mvnw", "spring-boot:run"]
+      - ./logs:/app/logs
+    entrypoint: ["/start.sh", "/wait-for-it.sh", "db:5432", "--", "./mvnw", "spring-boot:run"]
 
   pgadmin:
     image: dpage/pgadmin4

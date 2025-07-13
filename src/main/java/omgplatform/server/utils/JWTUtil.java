@@ -27,13 +27,6 @@ public class JWTUtil {
     public JWTUtil(JWTConfig jwtConfig) {
         this.jwtConfig = jwtConfig;
         LoggingUtil.info("JWTUtil initialized with configuration");
-        
-        // Log configuration details directly
-        LoggingUtil.info("JWT Configuration loaded", Map.of(
-            "expiryMinutes", jwtConfig.getExpiryMinutes(),
-            "signatureAlgorithm", jwtConfig.getSignatureAlgorithm(),
-            "secretLength", jwtConfig.getSecret() != null ? jwtConfig.getSecret().length() : 0
-        ));
     }
 
     /**
