@@ -3,10 +3,8 @@ package omgplatform.server.controllers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import omgplatform.server.dto.GameMessage;
 import omgplatform.server.dto.WebSocketMessage;
 import omgplatform.server.entities.User;
-import omgplatform.server.services.GameService;
 import omgplatform.server.services.UserService;
 import omgplatform.server.utils.JWTUtil;
 import org.springframework.stereotype.Component;
@@ -20,11 +18,17 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Enhanced WebSocket server logic for game functionality.
+ * WebSocket handler for real-time communication.
+ *
+ * This handler manages:
+ * - WebSocket connections and sessions
+ * - User authentication via JWT tokens
+ * - Real-time messaging between users
+ * - Connection lifecycle management
  *
  * @authors Clement Luo,
  * @date April 15, 2025
- * @edited June 29, 2025
+ * @edited July 14, 2025
  * @since 1.0
  */
 @Component
@@ -39,12 +43,16 @@ public class WebSocketHandler extends TextWebSocketHandler {
     private final ObjectMapper objectMapper = new ObjectMapper();
     
     // Services
-    private final GameService gameService;
     private final UserService userService;
     private final JWTUtil jwtUtil;
 
     /**
-     * Run after connection is established
+     * Handle new WebSocket connection establishment.
+     * 
+     * Sends a welcome message to the client and logs connection details.
+     *
+     * @param session The WebSocket session that was established
+     * @throws IOException if message sending fails
      */
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws IOException {
@@ -56,12 +64,21 @@ public class WebSocketHandler extends TextWebSocketHandler {
         ));
         
         // Send welcome message
-        WebSocketMessage welcomeMsg = WebSocketMessage.system("Welcome! Please authenticate to join the game.");
+        WebSocketMessage welcomeMsg = WebSocketMessage.system("Welcome! Please authenticate to start messaging.");
         sendMessage(session, welcomeMsg);
     }
 
     /**
-     * Handle text messages
+     * Handle incoming text messages from WebSocket clients.
+     * 
+     * Processes different message types:
+     * - AUTH: User authentication with JWT token
+     * - MESSAGE: General messaging between users
+     * - BROADCAST: System-wide announcements
+     *
+     * @param session The WebSocket session
+     * @param message The incoming text message
+     * @throws Exception if message processing fails
      */
     @Override
     public void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
@@ -80,20 +97,14 @@ public class WebSocketHandler extends TextWebSocketHandler {
             
             // Handle different message types
             switch (wsMessage.getType()) {
-                case "JOIN":
-                    handleJoinGame(session, wsMessage);
+                case "AUTH":
+                    handleAuthentication(session, wsMessage);
                     break;
-                case "CHAT":
+                case "MESSAGE":
                     handleChatMessage(session, wsMessage);
                     break;
-                case "MOVE":
-                    handlePlayerMove(session, wsMessage);
-                    break;
-                case "GET_STATE":
-                    handleGetGameState(session);
-                    break;
-                case "GET_PLAYERS":
-                    handleGetPlayers(session);
+                case "BROADCAST":
+                    handleBroadcastMessage(session, wsMessage);
                     break;
                 default:
                     sendError(session, "Unknown message type: " + wsMessage.getType());
@@ -106,197 +117,13 @@ public class WebSocketHandler extends TextWebSocketHandler {
     }
 
     /**
-     * Handle player joining the game
-     */
-    private void handleJoinGame(WebSocketSession session, WebSocketMessage message) {
-        try {
-            GameMessage.JoinGame joinData = objectMapper.convertValue(message.getPayload(), GameMessage.JoinGame.class);
-            
-            if (joinData.getUsername() == null || joinData.getToken() == null) {
-                sendError(session, "Username and token are required");
-                return;
-            }
-            
-            // Validate JWT token
-            try {
-                jwtUtil.validateToken(joinData.getToken());
-            } catch (Exception e) {
-                sendError(session, "Invalid authentication token");
-                return;
-            }
-            
-            // Get user from database
-            User user = userService.findByUsername(joinData.getUsername()).orElse(null);
-            if (user == null) {
-                sendError(session, "User not found");
-                return;
-            }
-            
-            // Check if user is already connected
-            if (gameService.isPlayerOnline(user.getUsername())) {
-                sendError(session, "User is already online");
-                return;
-            }
-            
-            // Add user to authenticated sessions
-            authenticatedSessions.put(session, user);
-            
-            // Add player to game
-            GameMessage.PlayerInfo playerInfo = gameService.addPlayer(user);
-            
-            // Send success response
-            WebSocketMessage response = WebSocketMessage.of("JOIN_SUCCESS", Map.of(
-                "player", playerInfo,
-                "message", "Successfully joined the game!"
-            ));
-            response.setSender(user.getUsername());
-            sendMessage(session, response);
-            
-            // Broadcast player joined message
-            WebSocketMessage broadcastMsg = WebSocketMessage.system(user.getUsername() + " joined the game!");
-            broadcastToAuthenticated(broadcastMsg);
-            
-            // Send current game state to the new player
-            WebSocketMessage gameStateMsg = WebSocketMessage.of("GAME_STATE", gameService.getGameState());
-            sendMessage(session, gameStateMsg);
-            
-            log.info("Player joined game successfully", Map.of(
-                "username", user.getUsername(),
-                "sessionId", session.getId()
-            ));
-            
-        } catch (Exception e) {
-            log.error("Error handling join game", e);
-            sendError(session, "Failed to join game: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Handle chat messages
-     */
-    private void handleChatMessage(WebSocketSession session, WebSocketMessage message) {
-        User user = authenticatedSessions.get(session);
-        if (user == null) {
-            sendError(session, "Not authenticated");
-            return;
-        }
-        
-        try {
-            GameMessage.ChatMessage chatData = objectMapper.convertValue(message.getPayload(), GameMessage.ChatMessage.class);
-            
-            if (chatData.getMessage() == null || chatData.getMessage().trim().isEmpty()) {
-                sendError(session, "Message cannot be empty");
-                return;
-            }
-            
-            // Create chat message
-            WebSocketMessage chatMsg = WebSocketMessage.of("CHAT", Map.of(
-                "message", chatData.getMessage(),
-                "room", chatData.getRoom() != null ? chatData.getRoom() : "main"
-            ));
-            chatMsg.setSender(user.getUsername());
-            
-            // Broadcast to all authenticated users
-            broadcastToAuthenticated(chatMsg);
-            
-            log.debug("Chat message broadcasted", Map.of(
-                "username", user.getUsername(),
-                "message", chatData.getMessage()
-            ));
-            
-        } catch (Exception e) {
-            log.error("Error handling chat message", e);
-            sendError(session, "Failed to send chat message");
-        }
-    }
-
-    /**
-     * Handle player movement
-     */
-    private void handlePlayerMove(WebSocketSession session, WebSocketMessage message) {
-        User user = authenticatedSessions.get(session);
-        if (user == null) {
-            sendError(session, "Not authenticated");
-            return;
-        }
-        
-        try {
-            GameMessage.PlayerMove moveData = objectMapper.convertValue(message.getPayload(), GameMessage.PlayerMove.class);
-            
-            // Update player position
-            boolean success = gameService.updatePlayerPosition(
-                user.getUsername(), 
-                moveData.getX(), 
-                moveData.getY(), 
-                moveData.getDirection()
-            );
-            
-            if (success) {
-                // Broadcast movement to all players
-                WebSocketMessage moveMsg = WebSocketMessage.of("PLAYER_MOVE", Map.of(
-                    "username", user.getUsername(),
-                    "x", moveData.getX(),
-                    "y", moveData.getY(),
-                    "direction", moveData.getDirection()
-                ));
-                broadcastToAuthenticated(moveMsg);
-                
-                log.debug("Player movement broadcasted", Map.of(
-                    "username", user.getUsername(),
-                    "x", moveData.getX(),
-                    "y", moveData.getY(),
-                    "direction", moveData.getDirection()
-                ));
-            } else {
-                sendError(session, "Failed to update position");
-            }
-            
-        } catch (Exception e) {
-            log.error("Error handling player move", e);
-            sendError(session, "Failed to process movement");
-        }
-    }
-
-    /**
-     * Handle get game state request
-     */
-    private void handleGetGameState(WebSocketSession session) {
-        User user = authenticatedSessions.get(session);
-        if (user == null) {
-            sendError(session, "Not authenticated");
-            return;
-        }
-        
-        try {
-            WebSocketMessage stateMsg = WebSocketMessage.of("GAME_STATE", gameService.getGameState());
-            sendMessage(session, stateMsg);
-        } catch (Exception e) {
-            log.error("Error getting game state", e);
-            sendError(session, "Failed to get game state");
-        }
-    }
-
-    /**
-     * Handle get players request
-     */
-    private void handleGetPlayers(WebSocketSession session) {
-        User user = authenticatedSessions.get(session);
-        if (user == null) {
-            sendError(session, "Not authenticated");
-            return;
-        }
-        
-        try {
-            WebSocketMessage playersMsg = WebSocketMessage.of("PLAYERS_LIST", gameService.getOnlinePlayers());
-            sendMessage(session, playersMsg);
-        } catch (Exception e) {
-            log.error("Error getting players list", e);
-            sendError(session, "Failed to get players list");
-        }
-    }
-
-    /**
-     * Run after connection is closed
+     * Handle WebSocket connection closure.
+     * 
+     * Removes the user from authenticated sessions and broadcasts
+     * a departure message to other connected users.
+     *
+     * @param session The WebSocket session that was closed
+     * @param status The close status with reason
      */
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
@@ -312,11 +139,8 @@ public class WebSocketHandler extends TextWebSocketHandler {
         ));
         
         if (user != null) {
-            // Remove player from game
-            gameService.removePlayer(user.getUsername());
-            
-            // Broadcast player left message
-            WebSocketMessage leaveMsg = WebSocketMessage.system(user.getUsername() + " left the game.");
+            // Broadcast user departure message
+            WebSocketMessage leaveMsg = WebSocketMessage.system(user.getUsername() + " has disconnected.");
             broadcastToAuthenticated(leaveMsg);
             
             log.info("User disconnected: " + user.getUsername());
@@ -324,7 +148,99 @@ public class WebSocketHandler extends TextWebSocketHandler {
     }
 
     /**
-     * Send a message to a specific session
+     * Handle user authentication via JWT token.
+     * 
+     * Validates the JWT token and adds the user to authenticated sessions
+     * if the token is valid.
+     *
+     * @param session The WebSocket session
+     * @param wsMessage The authentication message containing JWT token
+     */
+    private void handleAuthentication(WebSocketSession session, WebSocketMessage wsMessage) {
+        try {
+            String token = (String) wsMessage.getPayload();
+            String username = jwtUtil.getUsernameFromToken(token);
+            
+            if (username != null && !jwtUtil.isTokenExpired(token)) {
+                var userOptional = userService.findByUsername(username);
+                if (userOptional.isPresent()) {
+                    User user = userOptional.get();
+                    authenticatedSessions.put(session, user);
+                    
+                    // Send authentication success message
+                    WebSocketMessage authSuccess = WebSocketMessage.system("Authentication successful! Welcome, " + username);
+                    sendMessage(session, authSuccess);
+                    
+                    // Broadcast user joined message
+                    WebSocketMessage joinMsg = WebSocketMessage.system(username + " has joined the chat.");
+                    broadcastToAuthenticated(joinMsg);
+                    
+                    log.info("User authenticated: " + username);
+                } else {
+                    sendError(session, "User not found");
+                }
+            } else {
+                sendError(session, "Invalid authentication token");
+            }
+        } catch (Exception e) {
+            log.error("Authentication error", e);
+            sendError(session, "Authentication failed: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Handle chat messages between users.
+     * 
+     * Broadcasts the message to all authenticated users if the sender
+     * is authenticated.
+     *
+     * @param session The WebSocket session
+     * @param wsMessage The chat message
+     */
+    private void handleChatMessage(WebSocketSession session, WebSocketMessage wsMessage) {
+        User user = authenticatedSessions.get(session);
+        if (user == null) {
+            sendError(session, "Authentication required");
+            return;
+        }
+        
+        // Create message with sender information
+        WebSocketMessage chatMsg = WebSocketMessage.of("MESSAGE", wsMessage.getPayload());
+        chatMsg.setSender(user.getUsername());
+        
+        // Broadcast to all authenticated users
+        broadcastToAuthenticated(chatMsg);
+        
+        log.info("Chat message from " + user.getUsername() + ": " + wsMessage.getPayload());
+    }
+
+    /**
+     * Handle broadcast messages (system announcements).
+     * 
+     * Only authenticated users can send broadcast messages.
+     *
+     * @param session The WebSocket session
+     * @param wsMessage The broadcast message
+     */
+    private void handleBroadcastMessage(WebSocketSession session, WebSocketMessage wsMessage) {
+        User user = authenticatedSessions.get(session);
+        if (user == null) {
+            sendError(session, "Authentication required");
+            return;
+        }
+        
+        // Create system broadcast message
+        WebSocketMessage broadcastMsg = WebSocketMessage.system((String) wsMessage.getPayload());
+        broadcastToAuthenticated(broadcastMsg);
+        
+        log.info("Broadcast message from " + user.getUsername() + ": " + wsMessage.getPayload());
+    }
+
+    /**
+     * Send a message to a specific WebSocket session.
+     *
+     * @param session The target WebSocket session
+     * @param message The message to send
      */
     private void sendMessage(WebSocketSession session, WebSocketMessage message) {
         try {
@@ -336,7 +252,10 @@ public class WebSocketHandler extends TextWebSocketHandler {
     }
 
     /**
-     * Send error message to a session
+     * Send an error message to a specific WebSocket session.
+     *
+     * @param session The target WebSocket session
+     * @param error The error message to send
      */
     private void sendError(WebSocketSession session, String error) {
         WebSocketMessage errorMsg = WebSocketMessage.error(error);
@@ -344,7 +263,12 @@ public class WebSocketHandler extends TextWebSocketHandler {
     }
 
     /**
-     * Broadcast message to all authenticated sessions
+     * Broadcast a message to all authenticated WebSocket sessions.
+     * 
+     * Sends the message to all connected and authenticated users,
+     * logging success and failure counts for monitoring.
+     *
+     * @param message The message to broadcast
      */
     private void broadcastToAuthenticated(WebSocketMessage message) {
         log.debug("Broadcasting message to authenticated sessions", Map.of(
@@ -376,14 +300,19 @@ public class WebSocketHandler extends TextWebSocketHandler {
     }
 
     /**
-     * Get current connection count
+     * Get the current number of active WebSocket connections.
+     *
+     * @return Number of authenticated sessions
      */
     public int getConnectionCount() {
         return authenticatedSessions.size();
     }
 
     /**
-     * Get authenticated user for session
+     * Get the authenticated user for a specific WebSocket session.
+     *
+     * @param session The WebSocket session
+     * @return The authenticated user, or null if not authenticated
      */
     public User getAuthenticatedUser(WebSocketSession session) {
         return authenticatedSessions.get(session);

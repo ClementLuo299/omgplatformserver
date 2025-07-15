@@ -6,10 +6,17 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Base WebSocket message structure for client-server communication.
+ * WebSocket message structure for client-server communication.
+ * 
+ * This DTO is used for:
+ * - Real-time messaging between users
+ * - System notifications and announcements
+ * - User authentication
+ * - Error handling
  *
  * @authors Clement Luo,
  * @date June 29, 2025
+ * @edited July 14, 2025
  * @since 1.0
  */
 @Data
@@ -19,7 +26,7 @@ import lombok.NoArgsConstructor;
 public class WebSocketMessage {
     
     /**
-     * Type of message (e.g., "JOIN", "MOVE", "CHAT", "GAME_STATE")
+     * Type of message (e.g., "AUTH", "MESSAGE", "BROADCAST", "SYSTEM", "ERROR")
      */
     private String type;
     
@@ -44,21 +51,31 @@ public class WebSocketMessage {
     private String error;
     
     /**
-     * Create a new WebSocket message with current timestamp
+     * Create a new WebSocket message with current timestamp.
+     *
+     * @param type The message type
+     * @param payload The message payload
+     * @return New WebSocket message
      */
     public static WebSocketMessage of(String type, Object payload) {
         return new WebSocketMessage(type, null, payload, System.currentTimeMillis(), null);
     }
     
     /**
-     * Create an error message
+     * Create an error message.
+     *
+     * @param error The error message
+     * @return Error WebSocket message
      */
     public static WebSocketMessage error(String error) {
         return new WebSocketMessage("ERROR", null, null, System.currentTimeMillis(), error);
     }
     
     /**
-     * Create a system message
+     * Create a system message.
+     *
+     * @param message The system message content
+     * @return System WebSocket message
      */
     public static WebSocketMessage system(String message) {
         return new WebSocketMessage("SYSTEM", "System", message, System.currentTimeMillis(), null);

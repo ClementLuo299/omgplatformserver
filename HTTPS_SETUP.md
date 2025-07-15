@@ -10,14 +10,14 @@ The server is now configured to use HTTPS with a self-signed certificate for dev
 
 ## Usage
 - **HTTPS URL**: `https://localhost:8443`
-- **WebSocket**: `wss://localhost:8443/game`
+- **WebSocket**: `wss://localhost:8443/websocket`
 - **API**: `https://localhost:8443/api/**`
 
 ## Frontend Updates
 Update your frontend to use HTTPS/WSS:
 ```javascript
 // WebSocket
-const socket = new WebSocket('wss://localhost:8443/game');
+const socket = new WebSocket('wss://localhost:8443/websocket');
 
 // API calls
 fetch('https://localhost:8443/api/auth/login', {...});
@@ -67,7 +67,7 @@ The server is configured to accept requests from:
 ### WebSocket Connection
 Update your frontend WebSocket connection to use WSS:
 ```javascript
-const socket = new WebSocket('wss://localhost:8443/game');
+const socket = new WebSocket('wss://localhost:8443/websocket');
 ```
 
 ### API Calls
